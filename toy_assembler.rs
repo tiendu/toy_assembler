@@ -43,8 +43,9 @@ fn main() -> io::Result<()> {
         sequences.push(i.sequence);
     }
     let mut sequences: Vec<&str> = sequences.iter().map(|s| &**s).collect();
-    sequences.sort();
-    let result = assemble(sequences[0], sequences[1 .. ].to_vec());
+    sequences.sort_by(|a, b| a.len().cmp(&b.len()));
+    sequences.reverse();
+    let result = assemble_helper(sequences);
     let mut file = File::create("assembly.txt")?;
     file.write(result.as_bytes())?;
     Ok(())
@@ -98,34 +99,42 @@ fn find_best_match(sequence1: &str, others: Vec<&str>) -> (usize, isize, String,
     return result.to_owned();
 }
 
-fn consensus((score, offset, sequence1, sequence2): (usize, isize, String, String)) -> String {
-    let sequence1_length = sequence1.len() as isize;
-    let left_overhang: usize = *[0, offset]
+fn consensus((_score, offset, sequence1, sequence2): &(usize, isize, String, String)) -> String {
+    let _sequence1_length = sequence1.len() as isize;
+    let left_overhang: usize = *[0, *offset]
         .iter()
         .max()
         .unwrap() as usize;
-    let right_overhang: usize = (sequence1_length + offset) as usize;
-    let sequence2_length = sequence2.len() as isize;
-    let mut sequence2_right_overhang = String::from("");
-    let mut sequence2_left_overhang = String::from("");
-    if left_overhang != 0 {
+    let right_overhang: usize = (_sequence1_length + *offset) as usize;
+    let sequence2_right_overhang: String;
+    let sequence2_left_overhang: String;
+    if left_overhang > 0 {
         sequence2_left_overhang = sequence2[0 .. left_overhang].to_string();
+    } else {
+        sequence2_left_overhang = "".to_string();
     }
     if right_overhang < sequence2.len() {
         sequence2_right_overhang = sequence2[right_overhang .. ].to_string();
+    } else {
+        sequence2_right_overhang = "".to_string();
     }
-    return sequence2_left_overhang + &sequence1 + &sequence2_right_overhang;
+    return [sequence2_left_overhang, sequence1.to_string(), sequence2_right_overhang].join("");
 }
 
 fn assemble(sequence1: &str, mut others: Vec<&str>) -> String {
     let best_matching_other = find_best_match(sequence1, others.to_vec());
-    let consensus_sequence = consensus(best_matching_other.clone());
+    let consensus_sequence = consensus(&best_matching_other);
     if others.len() == 1 {
         return consensus_sequence
     } else {
         let best_matching_sequence = best_matching_other.2;
         let index = others.iter().position(|x| *x == best_matching_sequence).unwrap();
         others.remove(index);
+        println!("check {}", &consensus_sequence);
         return assemble(&consensus_sequence, others);
     }
+}
+
+fn assemble_helper(sequences: Vec<&str>) -> String {
+    return assemble(&sequences[0], sequences[1 ..].to_vec())
 }
