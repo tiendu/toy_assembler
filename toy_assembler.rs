@@ -15,15 +15,16 @@ impl IdSequence {
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    let file = File::open(args[1].to_string()).unwrap();
+    let input = args[1].to_string();
+    let file = File::open(&input.to_string()).unwrap();
     let reader = BufReader::new(file);
-    let mut id = String::from("");
+    let mut id = String::new();
     let mut storage: Vec<IdSequence> = Vec::new();
     for line in reader.lines() {
-        let l = line.as_ref().unwrap();
+        let l = &mut line.as_ref().unwrap().to_string();
         let s = l.split("");
         let vec: Vec<&str> = s.collect();        
-        let mut name = String::from("");
+        let mut name = String::new();
         if vec[1] == ">" {
             for i in 1 .. vec.len() {
                 if vec[i] == " " {
@@ -35,6 +36,7 @@ fn main() -> io::Result<()> {
             }
             id = name;
         } else {
+            l.retain(|c| !c.is_whitespace());
             storage.push(IdSequence::new(id.to_string(), l.to_string()));
         }
     }
@@ -45,8 +47,10 @@ fn main() -> io::Result<()> {
     let mut sequences: Vec<&str> = sequences.iter().map(|s| &**s).collect();
     sequences.sort_by(|a, b| a.len().cmp(&b.len()));
     sequences.reverse();
-    let result = assemble_helper(sequences);
-    let mut file = File::create("assembly.txt")?;
+    let result = [assemble_helper(sequences), "\n".to_string()].join("");
+    let file_struct = input.split(".").collect::<Vec<&str>>();
+    let filename = ["assembly_".to_string(), file_struct[0].to_string(), ".txt".to_string()].join("");
+    let mut file = File::create(filename)?;
     file.write(result.as_bytes())?;
     Ok(())
 }
@@ -130,7 +134,6 @@ fn assemble(sequence1: &str, mut others: Vec<&str>) -> String {
         let best_matching_sequence = best_matching_other.2;
         let index = others.iter().position(|x| *x == best_matching_sequence).unwrap();
         others.remove(index);
-        println!("check {}", &consensus_sequence);
         return assemble(&consensus_sequence, others);
     }
 }
