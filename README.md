@@ -6,6 +6,8 @@ It was implemented in Python and I decided to try to convert it into Rust to see
 
 So this is how we can use it:
 
-rustc assembler.rs
+rustc toy_assembler.rs
 
-./assembler file.fna
+./toy_assembler file.fna
+
+Note that this sequence assembler is just for fun so it won't produce the exact real consensus sequence.
