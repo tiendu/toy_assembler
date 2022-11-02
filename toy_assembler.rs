@@ -1,5 +1,6 @@
 use std::env;
 use std::fs::File;
+use itertools::Itertools;
 use std::io::{self, prelude::*, BufReader};
 
 struct IdSequence {
@@ -47,11 +48,25 @@ fn main() -> io::Result<()> {
     let mut sequences: Vec<&str> = sequences.iter().map(|s| &**s).collect();
     sequences.sort_by(|a, b| a.len().cmp(&b.len()));
     sequences.reverse();
-    let result = [assemble_helper(sequences), "\n".to_string()].join("");
+    let assembly = assemble_helper(sequences);
+    let mut result: Vec<(String, usize)> = Vec::new();
+    for i in assembly
+        .iter()
+        .unique() {
+        let k = assembly
+            .iter()
+            .filter(|&x| x == i)
+            .count();
+        result.push((i.to_string(), k as usize));
+    }
+    result.sort_by(|x, y| x.1.cmp(&y.1));
+    result.reverse();
     let file_struct = input.split(".").collect::<Vec<&str>>();
-    let filename = ["assembly_".to_string(), file_struct[0].to_string(), ".txt".to_string()].join("");
+    let filename = ["assembly_".to_string(), file_struct[0].to_string(), file_struct[1].to_string()].join("");
     let mut file = File::create(filename)?;
-    file.write(result.as_bytes())?;
+    file.write(">assembly\n".as_bytes())?;
+    file.write(result[0].0.as_bytes())?;
+    file.write("\n".as_bytes())?;
     Ok(())
 }
 
@@ -132,12 +147,25 @@ fn assemble(sequence1: &str, mut others: Vec<&str>) -> String {
         return consensus_sequence
     } else {
         let best_matching_sequence = best_matching_other.2;
-        let index = others.iter().position(|x| *x == best_matching_sequence).unwrap();
+        let index = others
+            .iter()
+            .position(|x| *x == best_matching_sequence)
+            .unwrap();
         others.remove(index);
         return assemble(&consensus_sequence, others);
     }
 }
 
-fn assemble_helper(sequences: Vec<&str>) -> String {
-    return assemble(&sequences[0], sequences[1 ..].to_vec())
+fn assemble_helper(sequences: Vec<&str>) -> Vec<String> {
+    let mut result: Vec<String> = Vec::new();
+    for i in 0 .. sequences.len() {
+        let mut others = sequences.clone();
+        let index = sequences
+            .iter()
+            .position(|x| *x == sequences[i])
+            .unwrap();
+        others.remove(index);
+        result.push(assemble(&sequences[i], others));
+    }
+    return result;
 }
