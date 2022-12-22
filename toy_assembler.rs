@@ -25,17 +25,18 @@ fn main() -> io::Result<()> {
         let l = &mut line.as_ref().unwrap().to_string();
         let s = l.split("");
         let vec: Vec<&str> = s.collect();        
-        let mut name = String::new();
+//         let mut name = String::new();
         if vec[1] == ">" {
-            for i in 1 .. vec.len() {
-                if vec[i] == " " {
-                    name = vec[2 .. i].join("");
-                    break;
-                } else if vec[i] != "" { 
-                    name = vec[2 .. vec.len()].join("");
-                }
-            }
-            id = name;
+//             for i in 1 .. vec.len() {
+//                 if vec[i] == " " {
+//                     name = vec[2 .. i].join("");
+//                     break;
+//                 } else if vec[i] != "" { 
+//                     name = vec[2 .. vec.len()].join("");
+//                 }
+//             }
+//             id = name;
+            id = vec[2 .. vec.len()]. join("");
         } else {
             l.retain(|c| !c.is_whitespace());
             storage.push(IdSequence::new(id.to_string(), l.to_string()));
